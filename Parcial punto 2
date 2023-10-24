@@ -1,0 +1,101 @@
+import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+
+void main() {
+  runApp(MyApp());
+}
+
+class MyApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'App de Clima',
+      theme: ThemeData(
+        primarySwatch: Colors.teal, // Cambio del color principal a teal
+        visualDensity: VisualDensity.adaptivePlatformDensity,
+        textTheme: TextTheme(
+          bodyText2: TextStyle(color: Colors.black87), // Cambio del color del texto
+        ),
+      ),
+      home: WeatherApp(),
+    );
+  }
+}
+
+class WeatherApp extends StatefulWidget {
+  @override
+  _WeatherAppState createState() => _WeatherAppState();
+}
+
+class _WeatherAppState extends State<WeatherApp> {
+  final TextEditingController cityController = TextEditingController();
+  String temperature = '';
+  String description = '';
+  String error = '';
+
+  Future<void> fetchWeather(String cityName) async {
+    final apiKey = 'be3113da1d90a3ef04effc8c047f169a';
+    final url = 'https://api.openweathermap.org/data/2.5/weather?q=$cityName&appid=$apiKey&units=metric';
+
+    try {
+      final response = await http.get(Uri.parse(url));
+
+      if (response.statusCode == 200) {
+        final jsonData = json.decode(response.body);
+        setState(() {
+          temperature = jsonData['main']['temp'].toString();
+          description = jsonData['weather'][0]['description'];
+          error = '';
+        });
+      } else {
+        setState(() {
+          error = 'No se pudo obtener el clima. Por favor, verifica la ciudad y tu conexión a Internet.';
+        });
+      }
+    } catch (e) {
+      setState(() {
+        error = 'Error inesperado. Por favor, inténtalo de nuevo más tarde.';
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('App de Clima'),
+      ),
+      body: Padding(
+        padding: EdgeInsets.all(16.0),
+        child: Column(
+          children: <Widget>[
+            TextField(
+              controller: cityController,
+              decoration: InputDecoration(
+                labelText: 'Ingresa el nombre de la ciudad',
+                border: OutlineInputBorder(), // Agregado un borde al TextField
+              ),
+            ),
+            SizedBox(height: 20.0),
+            ElevatedButton(
+              onPressed: () {
+                fetchWeather(cityController.text);
+              },
+              child: Text('Obtener Clima'),
+            ),
+            SizedBox(height: 20.0),
+            if (error.isNotEmpty) Text(error, style: TextStyle(color: Colors.red)),
+            if (temperature.isNotEmpty)
+              Column(
+                children: <Widget>[
+                  Text('Temperatura: $temperature°C'),
+                  Text('Descripción: $description'),
+                ],
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
