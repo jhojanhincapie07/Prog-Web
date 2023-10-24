@@ -1,0 +1,187 @@
+  runApp(NotasJohanApp());
+}
+
+class NotasJohanApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'Notas Johan',
+      theme: ThemeData(
+        primarySwatch: Colors.indigo,
+        visualDensity: VisualDensity.adaptivePlatformDensity,
+      ),
+      home: NotasList(),
+    );
+  }
+}
+
+class NotasList extends StatefulWidget {
+  @override
+  _NotasListState createState() => _NotasListState();
+}
+
+class _NotasListState extends State<NotasList> {
+  List<Nota> notas = [];
+
+  void agregarNota(Nota nota) {
+    setState(() {
+      notas.add(nota);
+    });
+  }
+
+  void eliminarNota(Nota nota) {
+    setState(() {
+      notas.remove(nota);
+    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Nota eliminada'),
+        action: SnackBarAction(
+          label: 'Deshacer',
+          onPressed: () {
+            setState(() {
+              notas.add(nota);
+            });
+          },
+        ),
+      ),
+    );
+  }
+
+  void mostrarDialogoConfirmacionEliminar(Nota nota) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Eliminar Nota'),
+          content: Text('¿Estás seguro de que quieres eliminar esta nota?'),
+          actions: <Widget>[
+            TextButton(
+              child: Text('Cancelar'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+            TextButton(
+              child: Text('Eliminar'),
+              onPressed: () {
+                eliminarNota(nota);
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Notas Johan'),
+      ),
+      body: ListView.builder(
+        itemCount: notas.length,
+        itemBuilder: (context, index) {
+          return Dismissible(
+            key: Key(notas[index].titulo),
+            onDismissed: (direction) {
+              eliminarNota(notas[index]);
+            },
+            background: Container(
+              color: Colors.red,
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Icon(
+                  Icons.delete,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+            child: ListTile(
+              title: Text(notas[index].titulo),
+              subtitle: Text(notas[index].contenido),
+              trailing: IconButton(
+                icon: Icon(Icons.delete),
+                onPressed: () {
+                  mostrarDialogoConfirmacionEliminar(notas[index]);
+                },
+              ),
+            ),
+          );
+        },
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => PantallaCrearNota(agregarNota),
+            ),
+          );
+        },
+        child: Icon(Icons.add),
+      ),
+    );
+  }
+}
+
+class PantallaCrearNota extends StatefulWidget {
+  final Function agregarNota;
+
+  PantallaCrearNota(this.agregarNota);
+
+  @override
+  _PantallaCrearNotaState createState() => _PantallaCrearNotaState();
+}
+
+class _PantallaCrearNotaState extends State<PantallaCrearNota> {
+  final controladorTitulo = TextEditingController();
+  final controladorContenido = TextEditingController();
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Crear Nota'),
+      ),
+      body: Padding(
+        padding: EdgeInsets.all(16.0),
+        child: Column(
+          children: <Widget>[
+            TextField(
+              controller: controladorTitulo,
+              decoration: InputDecoration(labelText: 'Título'),
+            ),
+            SizedBox(height: 10),
+            TextField(
+              controller: controladorContenido,
+              decoration: InputDecoration(labelText: 'Contenido'),
+              maxLines: 4,
+            ),
+            SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: () {
+                final titulo = controladorTitulo.text;
+                final contenido = controladorContenido.text;
+                if (titulo.isNotEmpty && contenido.isNotEmpty) {
+                  widget.agregarNota(Nota(titulo, contenido));
+                  Navigator.pop(context);
+                }
+              },
+              child: Text('Guardar'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class Nota {
+  final String titulo;
+  final String contenido;
+
+  Nota(this.titulo, this.contenido);
+}
